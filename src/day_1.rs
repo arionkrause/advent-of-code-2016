@@ -25,6 +25,12 @@ struct Position {
     x: i16,
 }
 
+#[derive(Debug)]
+struct Path {
+    from: Position,
+    to: Position,
+}
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 enum CardinalDirection {
     North,
@@ -69,7 +75,7 @@ mod part_1 {
 
         let mut state = State {
             facing: CardinalDirection::North,
-            position: Position { y: 0, x: 0 }
+            position: Position { y: 0, x: 0 },
         };
 
         for instruction in &instructions {
@@ -138,78 +144,84 @@ mod part_1 {
 }
 
 mod part_2 {
-    use std::collections::HashSet;
     use crate::day_1::CardinalDirection;
     use crate::day_1::Direction;
     use crate::day_1::Position;
     use crate::day_1::State;
     use crate::day_1::decode_input;
+    use crate::day_1::Path;
 
     pub fn solve(input: &str) -> u16 {
         let instructions = decode_input(&input);
-        let mut visited_positions = HashSet::new();
+        let mut paths = Vec::new();
 
         let mut state = State {
             facing: CardinalDirection::North,
-            position: Position { y: 0, x: 0 }
+            position: Position { y: 0, x: 0 },
         };
 
-        visited_positions.insert(state.position.clone());
-
-        'instructions: for instruction in &instructions {
+        for instruction in &instructions {
             match instruction.direction {
                 Direction::Left => {
                     match state.facing {
                         CardinalDirection::North => {
                             state.facing = CardinalDirection::West;
 
-                            for _ in 0..instruction.blocks {
-                                state.position.x -= 1;
+                            let path = Path {
+                                from: Position { y: state.position.y, x: state.position.x },
+                                to: Position { y: state.position.y, x: state.position.x - instruction.blocks as i16 },
+                            };
 
-                                if visited_positions.contains(&state.position) {
-                                    break 'instructions;
-                                } else {
-                                    visited_positions.insert(state.position.clone());
-                                }
+                            if let Some(position) = get_intersection_position(&paths, &path) {
+                                return (position.y.abs() + position.x.abs()) as u16;
+                            } else {
+                                state.position = path.to.clone();
+                                paths.push(path);
                             }
                         }
                         CardinalDirection::East => {
                             state.facing = CardinalDirection::North;
 
-                            for _ in 0..instruction.blocks {
-                                state.position.y += 1;
+                            let path = Path {
+                                from: Position { y: state.position.y, x: state.position.x },
+                                to: Position { y: state.position.y + instruction.blocks as i16, x: state.position.x },
+                            };
 
-                                if visited_positions.contains(&state.position) {
-                                    break 'instructions;
-                                } else {
-                                    visited_positions.insert(state.position.clone());
-                                }
+                            if let Some(position) = get_intersection_position(&paths, &path) {
+                                return (position.y.abs() + position.x.abs()) as u16;
+                            } else {
+                                state.position = path.to.clone();
+                                paths.push(path);
                             }
                         }
                         CardinalDirection::South => {
                             state.facing = CardinalDirection::East;
 
-                            for _ in 0..instruction.blocks {
-                                state.position.x += 1;
+                            let path = Path {
+                                from: Position { y: state.position.y, x: state.position.x },
+                                to: Position { y: state.position.y, x: state.position.x + instruction.blocks as i16 },
+                            };
 
-                                if visited_positions.contains(&state.position) {
-                                    break 'instructions;
-                                } else {
-                                    visited_positions.insert(state.position.clone());
-                                }
+                            if let Some(position) = get_intersection_position(&paths, &path) {
+                                return (position.y.abs() + position.x.abs()) as u16;
+                            } else {
+                                state.position = path.to.clone();
+                                paths.push(path);
                             }
                         }
                         CardinalDirection::West => {
                             state.facing = CardinalDirection::South;
 
-                            for _ in 0..instruction.blocks {
-                                state.position.y -= 1;
+                            let path = Path {
+                                from: Position { y: state.position.y, x: state.position.x },
+                                to: Position { y: state.position.y - instruction.blocks as i16, x: state.position.x },
+                            };
 
-                                if visited_positions.contains(&state.position) {
-                                    break 'instructions;
-                                } else {
-                                    visited_positions.insert(state.position.clone());
-                                }
+                            if let Some(position) = get_intersection_position(&paths, &path) {
+                                return (position.y.abs() + position.x.abs()) as u16;
+                            } else {
+                                state.position = path.to.clone();
+                                paths.push(path);
                             }
                         }
                     }
@@ -219,53 +231,61 @@ mod part_2 {
                         CardinalDirection::North => {
                             state.facing = CardinalDirection::East;
 
-                            for _ in 0..instruction.blocks {
-                                state.position.x += 1;
+                            let path = Path {
+                                from: Position { y: state.position.y, x: state.position.x },
+                                to: Position { y: state.position.y, x: state.position.x + instruction.blocks as i16 },
+                            };
 
-                                if visited_positions.contains(&state.position) {
-                                    break 'instructions;
-                                } else {
-                                    visited_positions.insert(state.position.clone());
-                                }
+                            if let Some(position) = get_intersection_position(&paths, &path) {
+                                return (position.y.abs() + position.x.abs()) as u16;
+                            } else {
+                                state.position = path.to.clone();
+                                paths.push(path);
                             }
                         }
                         CardinalDirection::East => {
                             state.facing = CardinalDirection::South;
 
-                            for _ in 0..instruction.blocks {
-                                state.position.y -= 1;
+                            let path = Path {
+                                from: Position { y: state.position.y, x: state.position.x },
+                                to: Position { y: state.position.y - instruction.blocks as i16, x: state.position.x },
+                            };
 
-                                if visited_positions.contains(&state.position) {
-                                    break 'instructions;
-                                } else {
-                                    visited_positions.insert(state.position.clone());
-                                }
+                            if let Some(position) = get_intersection_position(&paths, &path) {
+                                return (position.y.abs() + position.x.abs()) as u16;
+                            } else {
+                                state.position = path.to.clone();
+                                paths.push(path);
                             }
                         }
                         CardinalDirection::South => {
                             state.facing = CardinalDirection::West;
 
-                            for _ in 0..instruction.blocks {
-                                state.position.x -= 1;
+                            let path = Path {
+                                from: Position { y: state.position.y, x: state.position.x },
+                                to: Position { y: state.position.y, x: state.position.x - instruction.blocks as i16 },
+                            };
 
-                                if visited_positions.contains(&state.position) {
-                                    break 'instructions;
-                                } else {
-                                    visited_positions.insert(state.position.clone());
-                                }
+                            if let Some(position) = get_intersection_position(&paths, &path) {
+                                return (position.y.abs() + position.x.abs()) as u16;
+                            } else {
+                                state.position = path.to.clone();
+                                paths.push(path);
                             }
                         }
                         CardinalDirection::West => {
                             state.facing = CardinalDirection::North;
 
-                            for _ in 0..instruction.blocks {
-                                state.position.y += 1;
+                            let path = Path {
+                                from: Position { y: state.position.y, x: state.position.x },
+                                to: Position { y: state.position.y + instruction.blocks as i16, x: state.position.x },
+                            };
 
-                                if visited_positions.contains(&state.position) {
-                                    break 'instructions;
-                                } else {
-                                    visited_positions.insert(state.position.clone());
-                                }
+                            if let Some(position) = get_intersection_position(&paths, &path) {
+                                return (position.y.abs() + position.x.abs()) as u16;
+                            } else {
+                                state.position = path.to.clone();
+                                paths.push(path);
                             }
                         }
                     }
@@ -273,7 +293,38 @@ mod part_2 {
             }
         }
 
-        state.position.y.abs() as u16 + state.position.x.abs() as u16
+        unreachable!()
+    }
+
+    fn get_intersection_position(visited_paths: &Vec<Path>, path: &Path) -> Option<Position> {
+        if let Some(visited_path) = visited_paths.iter().find(|visited_path| {
+            ((visited_path.from.y < path.from.y && path.from.y < visited_path.to.y)
+                        || (visited_path.to.y < path.from.y && path.from.y < visited_path.from.y))
+                    && ((path.from.x < visited_path.from.x && visited_path.from.x < path.to.x)
+                        || (path.to.x < visited_path.from.x && visited_path.from.x < path.from.x))
+
+            ||
+
+            ((visited_path.from.x < path.from.x && path.from.x < visited_path.to.x)
+                        || (visited_path.to.x < path.from.x && path.from.x < visited_path.from.x))
+                    && ((path.from.y < visited_path.from.y && visited_path.from.y < path.to.y)
+                        || (path.to.y < visited_path.from.y && visited_path.from.y < path.from.y))
+        }) {
+            for path_y in path.from.y..=path.to.y {
+                for path_x in path.from.x..=path.to.x {
+                    for visited_path_y in visited_path.from.y..=visited_path.to.y {
+                        for visited_path_x in visited_path.from.x..=visited_path.to.x {
+                            if path_y == visited_path_y
+                                    && path_x == visited_path_x {
+                                return Some(Position { y: path_y, x: path_x });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        None
     }
 
     #[cfg(test)]
