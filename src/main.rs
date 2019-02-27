@@ -7,7 +7,7 @@ use std::env;
 
 mod day_1;
 mod day_2;
-//mod day_3;
+mod day_3;
 //mod day_4;
 //mod day_5;
 //mod day_6;
@@ -56,10 +56,10 @@ fn main() -> Result<(), Error> {
         day_2::solve(&read_file("day_2")?);
     }
 
-//    if (run_all || &arguments[1] == "day_3") && file_exists("day_3") {
-//        day_3::solve(&read_file("day_3")?);
-//    }
-//
+    if (run_all || &arguments[1] == "day_3") && file_exists("day_3") {
+        day_3::solve(&read_file("day_3")?);
+    }
+
 //    if (run_all || &arguments[1] == "day_4") && file_exists("day_4") {
 //        day_4::solve(&read_file("day_4")?);
 //    }
