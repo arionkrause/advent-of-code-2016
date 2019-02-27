@@ -4,13 +4,14 @@ use std::collections::HashMap;
 pub fn solve(input: &str) {
     println!("Day {}.", file!().chars().filter(|c| c.is_digit(10)).collect::<String>());
     println!("Part 1: {}.", part_1::solve(&input));
+    println!("Part 2: {}.", part_2::solve(&input));
     println!();
 }
 
 #[derive(Debug)]
 struct Room {
     name: String,
-    id: u16,
+    sector_id: u16,
     checksum: String,
 }
 
@@ -28,10 +29,22 @@ fn decode_input(input: &str) -> Vec<Room> {
 
         Room {
             name: captures.name("name").unwrap().as_str().to_string(),
-            id: captures.name("id").unwrap().as_str().parse().unwrap(),
+            sector_id: captures.name("id").unwrap().as_str().parse().unwrap(),
             checksum: captures.name("checksum").unwrap().as_str().to_string(),
         }
     }).collect()
+}
+
+fn is_real_room(room: &Room) -> bool {
+    let letters_frequencies = get_letters_frequencies_descending(&room.name);
+
+    for (index, letter) in room.checksum.chars().enumerate() {
+        if letter != letters_frequencies[index].letter {
+            return false;
+        }
+    }
+
+    true
 }
 
 fn get_letters_frequencies_descending(input: &str) -> Vec<LetterFrequency> {
@@ -57,21 +70,11 @@ fn get_letters_frequencies_descending(input: &str) -> Vec<LetterFrequency> {
 
 mod part_1 {
     use crate::day_4::decode_input;
-    use crate::day_4::get_letters_frequencies_descending;
+    use crate::day_4::is_real_room;
 
     pub fn solve(input: &str) -> u32 {
-        decode_input(&input).iter().filter(|room| {
-            let letters_frequencies = get_letters_frequencies_descending(&room.name);
-
-            for (index, letter) in room.checksum.chars().enumerate() {
-                if letter != letters_frequencies[index].letter {
-                    return false;
-                }
-            }
-
-            true
-        })
-                .map(|room| room.id as u32)
+        decode_input(&input).iter().filter(|room| is_real_room(&room))
+                .map(|room| room.sector_id as u32)
                 .sum()
     }
 
@@ -84,5 +87,42 @@ not-a-real-room-404[oarel]
 totally-real-room-200[decoy]";
 
         assert_eq!(solve(&input), 1514);
+    }
+}
+
+mod part_2 {
+    use crate::day_4::Room;
+    use crate::day_4::decode_input;
+    use crate::day_4::is_real_room;
+
+    pub fn solve(input: &str) -> u16 {
+        for room in decode_input(&input).iter() {
+            if is_real_room(&room) && decrypt_room_name(&room) == "northpole object storage" {
+                return room.sector_id;
+            }
+        }
+
+        panic!()
+    }
+
+    fn decrypt_room_name(room: &Room) -> String {
+        let mut name = room.name.clone();
+
+        for _ in 0..room.sector_id {
+            let mut new_name = String::new();
+
+            for character in name.chars() {
+                new_name.push(match character {
+                    '-' | ' ' => ' ',
+                    'z' => 'a',
+                    'a'...'y' => (character as u8 + 1) as char,
+                    _ => panic!(),
+                });
+            }
+
+            name = new_name;
+        }
+
+        name
     }
 }
