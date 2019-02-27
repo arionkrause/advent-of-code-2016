@@ -13,13 +13,16 @@ mod part_1 {
         let mut password = String::new();
         let mut index = 0;
         let mut md5_hasher = Md5::new();
+        let key = input.as_bytes();
 
         loop {
-            md5_hasher.input_str(&format!("{}{}", input, index));
-            let result = md5_hasher.result_str();
+            md5_hasher.input(key);
+            md5_hasher.input(index.to_string().as_bytes());
+            let mut hash = [0; 16];
+            md5_hasher.result(&mut hash);
 
-            if result.starts_with("00000") {
-                password.push(result.chars().nth(5).unwrap());
+            if hash[0] as i32 == 0 && hash[1] as i32 == 0 && (hash[2] >> 4) as i32 == 0 {
+                password.push_str(&format!("{:x}", hash[2]));
 
                 if password.len() == 8 {
                     return password;
@@ -46,18 +49,21 @@ mod part_2 {
         let mut password = String::from("________");
         let mut index = 0;
         let mut md5_hasher = Md5::new();
+        let key = input.as_bytes();
 
         loop {
-            md5_hasher.input_str(&format!("{}{}", input, index));
-            let result = md5_hasher.result_str();
+            md5_hasher.input(key);
+            md5_hasher.input(index.to_string().as_bytes());
+            let mut hash = [0; 16];
+            md5_hasher.result(&mut hash);
 
-            if result.starts_with("00000") {
-                let position_as_character = result.chars().nth(5).unwrap();
+            if hash[0] as i32 == 0 && hash[1] as i32 == 0 && (hash[2] >> 4) as i32 == 0 {
+                let position_as_character = format!("{:x}", hash[2]).chars().next().unwrap();
 
                 match position_as_character.to_digit(10) {
                     Some(position) => {
                         if position < 8 && password.chars().nth(position as usize).unwrap() == '_' {
-                            let character = result.chars().nth(6).unwrap();
+                            let character = format!("{:x}", hash[3] >> 4).chars().next().unwrap();
                             password.replace_range(position as usize..position as usize + 1, &character.to_string());
 
                             if !password.contains('_') {
