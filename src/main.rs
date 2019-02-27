@@ -6,7 +6,7 @@ use std::time::Instant;
 use std::env;
 
 mod day_1;
-//mod day_2;
+mod day_2;
 //mod day_3;
 //mod day_4;
 //mod day_5;
@@ -52,10 +52,10 @@ fn main() -> Result<(), Error> {
         day_1::solve(&read_file("day_1")?);
     }
 
-//    if (run_all || &arguments[1] == "day_2") && file_exists("day_2") {
-//        day_2::solve(&read_file("day_2")?);
-//    }
-//
+    if (run_all || &arguments[1] == "day_2") && file_exists("day_2") {
+        day_2::solve(&read_file("day_2")?);
+    }
+
 //    if (run_all || &arguments[1] == "day_3") && file_exists("day_3") {
 //        day_3::solve(&read_file("day_3")?);
 //    }
