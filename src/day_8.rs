@@ -3,6 +3,7 @@ use regex::Regex;
 pub fn solve(input: &str) {
     println!("Day {}.", file!().chars().filter(|c| c.is_digit(10)).collect::<String>());
     println!("Part 1: {}.", part_1::solve(&input));
+    println!("Part 2: {}.", part_2::solve(&input));
     println!();
 }
 
@@ -115,5 +116,38 @@ rotate row y=0 by 4
 rotate column x=1 by 1";
 
         assert_eq!(solve(&input), 6);
+    }
+}
+
+mod part_2 {
+    use crate::day_8::OperationType;
+    use crate::day_8::decode_input;
+    use crate::day_8::rect;
+    use crate::day_8::rotate_column;
+    use crate::day_8::rotate_row;
+
+    pub fn solve(input: &str) -> String {
+        let operations = decode_input(&input);
+        let mut grid = vec![vec!['.'; 50]; 6];
+
+        for operation in &operations {
+            match operation.operation_type {
+                OperationType::Rect => rect(&mut grid, operation.a, operation.b),
+                OperationType::RotateColumn => rotate_column(&mut grid, operation.a, operation.b),
+                OperationType::RotateRow => rotate_row(&mut grid, operation.a, operation.b),
+            }
+        }
+
+        let mut display = String::from("\n");
+
+        for row in grid.into_iter() {
+            for tile in row.into_iter() {
+                display.push(tile);
+            }
+
+            display.push('\n');
+        }
+
+        display
     }
 }
