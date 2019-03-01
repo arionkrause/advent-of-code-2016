@@ -164,6 +164,6 @@ fn read_file(path: &str) -> Result<String, Error> {
     full_path.push_str(path);
     let mut buffer = fs::read_to_string(full_path)
             .expect(&format!("Could not read file \"{}\"", path));
-    buffer = buffer.replace('\r', "").trim_right().to_owned();
+    buffer = buffer.replace('\r', "").trim_end().to_owned();
     Ok(buffer)
 }
