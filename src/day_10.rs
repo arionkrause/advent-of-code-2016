@@ -4,6 +4,7 @@ use std::collections::HashMap;
 pub fn solve(input: &str) {
     println!("Day {}.", file!().chars().filter(|c| c.is_digit(10)).collect::<String>());
     println!("Part 1: {}.", part_1::solve(&input, 17, 61));
+    println!("Part 2: {}.", part_2::solve(&input));
     println!();
 }
 
@@ -145,5 +146,49 @@ bot 0 gives low to output 2 and high to output 0
 value 2 goes to bot 2";
 
         assert_eq!(solve(&input, 2, 5), 2);
+    }
+}
+
+mod part_2 {
+    use crate::day_10::decode_input;
+
+    pub fn solve(input: &str) -> usize {
+        let (mut bots, mut outputs) = decode_input(&input);
+
+        loop {
+            let mut bots_value_attributions = Vec::new();
+            let mut outputs_value_attributions = Vec::new();
+
+            for (_, bot) in bots.iter_mut() {
+                if bot.value_low.is_none()
+                        || bot.value_high.is_none() {
+                    continue;
+                }
+
+                match bot.bot_id_gives_low_to {
+                    Some(id) => bots_value_attributions.push((id, bot.value_low.take().unwrap())),
+                    None => outputs_value_attributions.push((bot.output_id_gives_low_to.unwrap(), bot.value_low.take().unwrap())),
+                }
+
+                match bot.bot_id_gives_high_to {
+                    Some(id) => bots_value_attributions.push((id, bot.value_high.take().unwrap())),
+                    None => outputs_value_attributions.push((bot.output_id_gives_high_to.unwrap(), bot.value_high.take().unwrap())),
+                }
+            }
+
+            for (id, value) in bots_value_attributions {
+                bots.get_mut(&id).unwrap().attribute_value(value);
+            }
+
+            for (id, value) in outputs_value_attributions {
+                *outputs.get_mut(&id).unwrap() = value;
+            }
+
+            if bots.iter().all(|(_, bot)| bot.value_low.is_none() || bot.value_high.is_none()) {
+                return *outputs.get(&0).unwrap() as usize
+                        * *outputs.get(&1).unwrap() as usize
+                        * *outputs.get(&2).unwrap() as usize
+            }
+        }
     }
 }
