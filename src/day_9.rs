@@ -78,41 +78,52 @@ mod part_1 {
 
 mod part_2 {
     pub fn solve(input: &str) -> usize {
-        get_decompressed_length(&input)
-    }
-
-    fn get_decompressed_length(input: &str) -> usize {
+        let characters = input.chars().collect::<Vec<char>>();
+        let mut weights = vec![1; input.chars().count()];
         let mut length = 0;
-        let mut iterator = input.chars();
+        let mut index = 0;
 
-        'main: while let Some(character) = iterator.next() {
-            if character.is_ascii_alphabetic() {
-                length += 1;
-            } else {
-                let mut amount_characters_to_repeat = String::new();
+        loop {
+            let character = characters[index];
 
-                while let Some(character) = iterator.next() {
-                    if character.is_digit(10) {
-                        amount_characters_to_repeat.push(character);
-                    } else {
-                        let mut repetitions = String::new();
+            if character == '(' {
+                let mut amount_repeating_characters_buffer = String::new();
+                let mut amount_repetitions_buffer = String::new();
 
-                        while let Some(character) = iterator.next() {
-                            if character.is_digit(10) {
-                                repetitions.push(character);
-                            } else {
-                                let mut characters_to_repeat = String::new();
+                loop {
+                    index += 1;
 
-                                for _ in 0..amount_characters_to_repeat.parse().unwrap() {
-                                    characters_to_repeat.push(iterator.next().unwrap());
-                                }
-
-                                length += get_decompressed_length(&characters_to_repeat.repeat(repetitions.parse().unwrap()));
-                                continue 'main;
-                            }
-                        }
+                    if characters[index] == 'x' {
+                        break;
                     }
+
+                    amount_repeating_characters_buffer.push(characters[index]);
                 }
+
+                loop {
+                    index += 1;
+
+                    if characters[index] == ')' {
+                        break;
+                    }
+
+                    amount_repetitions_buffer.push(characters[index]);
+                }
+
+                index += 1;
+                let amount_repeating_characters = amount_repeating_characters_buffer.parse::<usize>().unwrap();
+                let amount_repetitions = amount_repetitions_buffer.parse::<usize>().unwrap();
+
+                for i in index..index + amount_repeating_characters {
+                    weights[i] *= amount_repetitions;
+                }
+            } else {
+                length += weights[index];
+                index += 1;
+            }
+
+            if index == weights.len() {
+                break;
             }
         }
 
