@@ -3,6 +3,7 @@ use regex::Regex;
 pub fn solve(input: &str) {
     println!("Day {}.", file!().chars().filter(|c| c.is_digit(10)).collect::<String>());
     println!("Part 1: {}.", part_1::solve(&input));
+    println!("Part 2: {}.", part_2::solve(&input));
     println!();
 }
 
@@ -35,8 +36,8 @@ fn decode_input(input: &str) -> Vec<Instruction> {
         if let Some(captures) = re_cpyr.captures(&line) {
             instructions.push(Instruction {
                 opcode: Opcode::Cpyr,
-                operand_a: (captures.name("operand_a").unwrap().as_str().chars().next().unwrap() as u8 - 97) as usize,
-                operand_b: Some((captures.name("operand_b").unwrap().as_str().chars().next().unwrap() as u8 - 97) as isize),
+                operand_a: captures.name("operand_a").unwrap().as_str().chars().next().unwrap() as usize - 97,
+                operand_b: Some(captures.name("operand_b").unwrap().as_str().chars().next().unwrap() as isize - 97),
             });
 
             continue;
@@ -46,7 +47,7 @@ fn decode_input(input: &str) -> Vec<Instruction> {
             instructions.push(Instruction {
                 opcode: Opcode::Cpyv,
                 operand_a: captures.name("operand_a").unwrap().as_str().parse().unwrap(),
-                operand_b: Some((captures.name("operand_b").unwrap().as_str().chars().next().unwrap() as u8 - 97) as isize),
+                operand_b: Some(captures.name("operand_b").unwrap().as_str().chars().next().unwrap() as isize - 97),
             });
 
             continue;
@@ -59,7 +60,7 @@ fn decode_input(input: &str) -> Vec<Instruction> {
                     "inc" => Opcode::Incv,
                     _ => panic!(),
                 },
-                operand_a: (captures.name("operand_a").unwrap().as_str().chars().next().unwrap() as u8 - 97) as usize,
+                operand_a: captures.name("operand_a").unwrap().as_str().chars().next().unwrap() as usize - 97,
                 operand_b: None,
             });
 
@@ -69,7 +70,7 @@ fn decode_input(input: &str) -> Vec<Instruction> {
         if let Some(captures) = re_jnzr.captures(&line) {
             instructions.push(Instruction {
                 opcode: Opcode::Jnzr,
-                operand_a: (captures.name("operand_a").unwrap().as_str().chars().next().unwrap() as u8 - 97) as usize,
+                operand_a: captures.name("operand_a").unwrap().as_str().chars().next().unwrap() as usize - 97,
                 operand_b: Some(captures.name("operand_b").unwrap().as_str().parse().unwrap())
             });
 
@@ -92,37 +93,41 @@ fn decode_input(input: &str) -> Vec<Instruction> {
     instructions
 }
 
+fn run(registers: &mut[usize], instructions: &Vec<Instruction>) -> usize {
+    let mut program_counter: isize = 0;
+
+    loop {
+        let instruction = &instructions[program_counter as usize];
+        program_counter += 1;
+
+        match instruction.opcode {
+            Opcode::Cpyr => registers[instruction.operand_b.unwrap() as usize] = registers[instruction.operand_a as usize],
+            Opcode::Cpyv => registers[instruction.operand_b.unwrap() as usize] = instruction.operand_a as usize,
+            Opcode::Decv => registers[instruction.operand_a as usize] -= 1,
+            Opcode::Incv => registers[instruction.operand_a as usize] += 1,
+            Opcode::Jnzr => if registers[instruction.operand_a as usize] != 0 {
+                program_counter += instruction.operand_b.unwrap() - 1;
+            },
+            Opcode::Jnzv => if instruction.operand_a != 0 {
+                program_counter += instruction.operand_b.unwrap() - 1;
+            },
+        }
+
+        if program_counter < 0 || program_counter as usize >= instructions.len() {
+            break;
+        }
+    }
+
+    registers[0]
+}
+
 mod part_1 {
-    use crate::day_12::{decode_input, Opcode};
+    use crate::day_12::{decode_input, run};
 
     pub fn solve(input: &str) -> usize {
         let mut registers = [0; 4];
         let instructions = decode_input(&input);
-        let mut program_counter: isize = 0;
-
-        loop {
-            let instruction = &instructions[program_counter as usize];
-            program_counter += 1;
-
-            match instruction.opcode {
-                Opcode::Cpyr => registers[instruction.operand_b.unwrap() as usize] = registers[instruction.operand_a as usize],
-                Opcode::Cpyv => registers[instruction.operand_b.unwrap() as usize] = instruction.operand_a as usize,
-                Opcode::Decv => registers[instruction.operand_a as usize] -= 1,
-                Opcode::Incv => registers[instruction.operand_a as usize] += 1,
-                Opcode::Jnzr => if registers[instruction.operand_a as usize] != 0 {
-                    program_counter += instruction.operand_b.unwrap() - 1;
-                },
-                Opcode::Jnzv => if instruction.operand_a != 0 {
-                    program_counter += instruction.operand_b.unwrap() - 1;
-                },
-            }
-
-            if program_counter < 0 || program_counter as usize >= instructions.len() {
-                break;
-            }
-        }
-
-        registers[0]
+        run(&mut registers, &instructions)
     }
 
     #[cfg(test)]
@@ -136,5 +141,16 @@ jnz a 2
 dec a";
 
         assert_eq!(solve(&input), 42);
+    }
+}
+
+mod part_2 {
+    use crate::day_12::{decode_input, run};
+
+    pub fn solve(input: &str) -> usize {
+        let mut registers = [0; 4];
+        registers[2] = 1;
+        let instructions = decode_input(&input);
+        run(&mut registers, &instructions)
     }
 }
