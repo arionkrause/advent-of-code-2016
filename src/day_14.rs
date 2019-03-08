@@ -1,6 +1,6 @@
 use crypto::md5::Md5;
 use crypto::digest::Digest;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 pub fn solve(input: &str) {
     println!("Day {}.", file!().chars().filter(|c| c.is_digit(10)).collect::<String>());
@@ -14,6 +14,7 @@ fn get_index_64th_key(input: &str, amount_additional_hashings: usize) -> usize {
     let mut number = 0;
     let mut next_number = 0;
     let mut hashes = VecDeque::with_capacity(1001);
+    let mut fives = HashMap::new();
     let mut md5_hasher = Md5::new();
 
     loop {
@@ -24,6 +25,23 @@ fn get_index_64th_key(input: &str, amount_additional_hashings: usize) -> usize {
                 md5_hasher.input_str(&buffer);
                 buffer = md5_hasher.result_str();
                 md5_hasher.reset();
+            }
+
+            let chars = buffer.chars().collect::<Vec<char>>();
+
+            for index in 0..chars.len() - 4 {
+                if chars[index] != chars[index + 1]
+                        || chars[index] != chars[index + 2]
+                        || chars[index] != chars[index + 3]
+                        || chars[index] != chars[index + 4] {
+                    continue;
+                }
+
+                fives.entry(chars[index])
+                        .and_modify(|numbers: &mut Vec<usize>| numbers.push(next_number))
+                        .or_insert(vec![next_number]);
+
+                break;
             }
 
             hashes.push_back(buffer);
@@ -39,26 +57,17 @@ fn get_index_64th_key(input: &str, amount_additional_hashings: usize) -> usize {
                 continue;
             }
 
-            for following_hash in hashes.iter() {
-                let following_hash_chars = following_hash.chars().collect::<Vec<char>>();
+            match fives.get(&chars[index]) {
+                Some(indices) => {
+                    if indices.iter().any(|five_number| *five_number > number && *five_number - number <= 1000) {
+                        amount_found_keys += 1;
 
-                for following_hash_char_index in 0..following_hash_chars.len() - 4 {
-                    if chars[index] != following_hash_chars[following_hash_char_index]
-                            || following_hash_chars[following_hash_char_index] != following_hash_chars[following_hash_char_index + 1]
-                            || following_hash_chars[following_hash_char_index] != following_hash_chars[following_hash_char_index + 2]
-                            || following_hash_chars[following_hash_char_index] != following_hash_chars[following_hash_char_index + 3]
-                            || following_hash_chars[following_hash_char_index] != following_hash_chars[following_hash_char_index + 4] {
-                        continue;
+                        if amount_found_keys == 64 {
+                            return number;
+                        }
                     }
-
-                    amount_found_keys += 1;
-
-                    if amount_found_keys == 64 {
-                        return number;
-                    }
-
-                    break 'hash;
                 }
+                None => {}
             }
 
             break 'hash;
