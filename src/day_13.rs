@@ -1,10 +1,31 @@
-use std::collections::{HashMap, VecDeque};
+use std::cmp::Ordering;
+use std::collections::{HashMap, BinaryHeap};
 
 pub fn solve(input: &str) {
     println!("Day {}.", file!().chars().filter(|c| c.is_digit(10)).collect::<String>());
     println!("Part 1: {}.", part_1::solve(&input, 31, 39, false));
     println!("Part 2: {}.", part_2::solve(&input));
     println!();
+}
+
+#[derive(Debug, Eq, PartialEq)]
+struct State {
+    position: Position,
+    amount_steps: usize,
+    manhattan_distance_to_target: usize,
+}
+
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.manhattan_distance_to_target.cmp(&self.manhattan_distance_to_target)
+                .then(other.amount_steps.cmp(&self.amount_steps))
+    }
+}
+
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &State) -> Option<Ordering> {
+        Some(self.cmp(&other))
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -43,10 +64,11 @@ fn get_tile(office_designer_favorite_number: usize, x: usize, y: usize) -> char 
 fn add_new_positions(mut grid: &mut Vec<Vec<char>>,
                      position: &Position,
                      amount_steps: usize,
-                     queue: &mut VecDeque<(Position, usize)>,
+                     queue: &mut BinaryHeap<State>,
                      visited_positions: &Vec<Position>,
                      previous_positions: &mut HashMap<Position, (Position, usize)>,
-                     office_designer_favorite_number: usize) {
+                     office_designer_favorite_number: usize,
+                     target: Option<&Position>) {
     let mut new_positions = Vec::new();
 
     match try_get_new_position(&mut grid, &position, 0, -1, office_designer_favorite_number) {
@@ -71,7 +93,7 @@ fn add_new_positions(mut grid: &mut Vec<Vec<char>>,
 
     for new_position in new_positions {
         if visited_positions.contains(&new_position)
-                || queue.iter().find(|(position, _)| position == &new_position).is_some() {
+                || queue.iter().find(|state| state.position == new_position).is_some() {
             continue;
         }
 
@@ -86,15 +108,29 @@ fn add_new_positions(mut grid: &mut Vec<Vec<char>>,
             }
         }
 
-        queue.push_back((new_position, amount_steps + 1));
+        let new_position_manhattan_distance = match target {
+            Some(target) => get_manhattan_distance(&new_position, &target),
+            None => 0,
+        };
+
+        queue.push(State {
+            position: new_position,
+            amount_steps: amount_steps + 1,
+            manhattan_distance_to_target: new_position_manhattan_distance,
+        });
     }
 }
 
+fn get_manhattan_distance(from: &Position, to: &Position) -> usize {
+    (from.x as isize - to.x as isize).abs() as usize
+            + (from.y as isize - to.y as isize).abs() as usize
+}
+
 fn try_get_new_position(grid: &mut Vec<Vec<char>>,
-                         position: &Position,
-                         offset_x: isize,
-                         offset_y: isize,
-                         office_designer_favorite_number: usize) -> Option<Position> {
+                        position: &Position,
+                        offset_x: isize,
+                        offset_y: isize,
+                        office_designer_favorite_number: usize) -> Option<Position> {
     let new_x = position.x as isize + offset_x;
 
     if new_x < 0 {
@@ -176,32 +212,32 @@ fn print_grid(grid: &Vec<Vec<char>>, visited_positions: &Vec<Position>, start: &
 }
 
 mod part_1 {
-    use std::collections::{HashMap, VecDeque};
-    use crate::day_13::{Position, add_new_positions, get_grid, print_grid, print_path};
+    use std::collections::{BinaryHeap, HashMap};
+    use crate::day_13::{Position, State, add_new_positions, get_grid, print_grid, print_path};
 
     pub fn solve(input: &str, target_x: usize, target_y: usize, print_grid_and_path: bool) -> usize {
         let office_designer_favorite_number = input.parse().unwrap();
         let mut grid = get_grid(office_designer_favorite_number, target_x, target_y);
-        let mut queue = VecDeque::new();
-        let start = Position { x: 1, y: 1};
-        let target = Position { x: target_x, y: target_y};
-        queue.push_back((start.clone(), 0));
+        let mut queue = BinaryHeap::new();
+        let start = Position { x: 1, y: 1 };
+        let target = Position { x: target_x, y: target_y };
+        queue.push(State { position: start.clone(), amount_steps: 0, manhattan_distance_to_target: 0 });
         let mut previous_positions = HashMap::new();
         let mut visited_positions = Vec::new();
 
-        while let Some((position, amount_steps)) = queue.pop_front() {
-            if position == target {
+        while let Some(state) = queue.pop() {
+            if state.position == target {
                 if print_grid_and_path {
                     print_grid(&grid, &visited_positions, &start, &target);
                     println!();
                     print_path(&grid, &start, &target, &previous_positions);
                 }
 
-                return amount_steps;
+                return state.amount_steps;
             }
 
-            visited_positions.push(position.clone());
-            add_new_positions(&mut grid, &position, amount_steps, &mut queue, &visited_positions, &mut previous_positions, office_designer_favorite_number);
+            visited_positions.push(state.position.clone());
+            add_new_positions(&mut grid, &state.position, state.amount_steps, &mut queue, &visited_positions, &mut previous_positions, office_designer_favorite_number, Some(&target));
         }
 
         panic!()
@@ -215,8 +251,8 @@ mod part_1 {
 }
 
 mod part_2 {
-    use std::collections::{HashMap, VecDeque};
-    use crate::day_13::{Position, add_new_positions, get_grid};
+    use std::collections::{BinaryHeap, HashMap};
+    use crate::day_13::{Position, State, add_new_positions, get_grid};
 
     pub fn solve(input: &str) -> usize {
         let office_designer_favorite_number = input.parse().unwrap();
@@ -225,16 +261,16 @@ mod part_2 {
     }
 
     fn get_amount_reachable_positions(mut grid: &mut Vec<Vec<char>>, start: Position, office_designer_favorite_number: usize) -> usize {
-        let mut queue = VecDeque::new();
-        queue.push_back((start.clone(), 0));
+        let mut queue = BinaryHeap::new();
+        queue.push(State { position: start.clone(), amount_steps: 0, manhattan_distance_to_target: 0 });
         let mut previous_positions = HashMap::new();
         let mut visited_positions = Vec::new();
 
-        while let Some((position, amount_steps)) = queue.pop_front() {
-            visited_positions.push(position.clone());
+        while let Some(state) = queue.pop() {
+            visited_positions.push(state.position.clone());
 
-            if amount_steps < 50 {
-                add_new_positions(&mut grid, &position, amount_steps, &mut queue, &visited_positions, &mut previous_positions, office_designer_favorite_number);
+            if state.amount_steps < 50 {
+                add_new_positions(&mut grid, &state.position, state.amount_steps, &mut queue, &visited_positions, &mut previous_positions, office_designer_favorite_number, None);
             }
         }
 
