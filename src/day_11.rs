@@ -14,6 +14,7 @@ struct State {
     items: Vec<Item>,
     elevator_floor: usize,
     steps_taken: usize,
+    combination: usize,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -42,51 +43,54 @@ fn decode_input(input: &str) -> State {
     }
 
     State {
-        items,
+        items: items.clone(),
         elevator_floor: 1,
         steps_taken: 0,
+        combination: get_combination(&items, 1),
     }
 }
 
 fn get_minimum_amount_steps(state: State) -> usize {
     let mut queue = VecDeque::new();
-    let mut seem_states = HashSet::new();
+    let mut seem_state_combinations = HashSet::new();
     queue.push_back(state);
 
     loop {
         let state = queue.pop_front().unwrap();
 
         if state.elevator_floor == 4
-                && state.items.iter().all(|item| item.floor == 4) {
+                // Using negated "any"+"different" instead of "all"+"equal" shortcircuits comparison
+                && !state.items.iter().any(|item| item.floor != 4) {
             return state.steps_taken;
         }
 
-        for next_state in get_next_states(&state) {
-            if !seem_states.contains(&get_state_combination(&state)) {
+        seem_state_combinations.insert(state.combination);
+
+        for next_state in get_new_states(&state) {
+            if !seem_state_combinations.contains(&next_state.combination)
+                && !queue.iter().any(|state| state.combination == next_state.combination) {
                 queue.push_back(next_state);
             }
         }
-
-        seem_states.insert(get_state_combination(&state));
     }
 }
 
-fn get_next_states(state: &State) -> Vec<State> {
-    let mut next_states = Vec::new();
+fn get_new_states(state: &State) -> Vec<State> {
+    let mut new_states = Vec::new();
 
     if state.elevator_floor > 1 {
-        next_states.extend(get_next_states_move_items(&state, -1));
+        new_states.extend(get_new_states_move_items(&state, -1));
     }
 
     if state.elevator_floor < 4 {
-        next_states.extend(get_next_states_move_items(&state, 1));
+        new_states.extend(get_new_states_move_items(&state, 1));
     }
 
-    next_states
+    new_states
 }
 
-fn get_next_states_move_items(state: &State, floor_offset: isize) -> Vec<State> {
-    let mut next_states = Vec::new();
+fn get_new_states_move_items(state: &State, floor_offset: isize) -> Vec<State> {
+    let mut new_states = Vec::new();
     let new_elevator_floor = (state.elevator_floor as isize + floor_offset) as usize;
 
     state.items.iter().enumerate()
@@ -115,17 +119,19 @@ fn get_next_states_move_items(state: &State, floor_offset: isize) -> Vec<State> 
                             next_state_moving_2_items.items[other_index].floor = new_elevator_floor;
 
                             if is_state_valid(&next_state_moving_2_items) {
-                                next_states.push(next_state_moving_2_items);
                                 can_move_two_items = true;
+                                next_state_moving_2_items.combination = get_combination(&next_state_moving_2_items.items, next_state_moving_2_items.elevator_floor);
+                                new_states.push(next_state_moving_2_items);
                             }
                         });
 
                 if (floor_offset == -1 && can_move_one_item) || (floor_offset == 1 && !can_move_two_items && can_move_one_item) {
-                    next_states.push(next_state_moving_1_item.clone());
+                    next_state_moving_1_item.combination = get_combination(&next_state_moving_1_item.items, next_state_moving_1_item.elevator_floor);
+                    new_states.push(next_state_moving_1_item);
                 }
             });
 
-    next_states
+    new_states
 }
 
 fn is_state_valid(state: &State) -> bool {
@@ -136,12 +142,12 @@ fn is_state_valid(state: &State) -> bool {
             })
 }
 
-fn get_state_combination(state: &State) -> usize {
+fn get_combination(items: &Vec<Item>, elevator_floor: usize) -> usize {
     let mut pairs = Vec::new();
 
-    for (item_index, item) in state.items.iter().enumerate() {
+    for (item_index, item) in items.iter().enumerate() {
         if item.item_type == 0 {
-            for (other_item_index, other_item) in state.items.iter().enumerate() {
+            for (other_item_index, other_item) in items.iter().enumerate() {
                 if other_item.item_type == 1 && other_item.id == item.id {
                     pairs.push((item_index, other_item_index));
                     break;
@@ -150,16 +156,16 @@ fn get_state_combination(state: &State) -> usize {
         }
     }
 
-    pairs.sort_by(|a, b| state.items[a.0].floor.cmp(&state.items[b.0].floor)
-            .then(state.items[a.1].floor.cmp(&state.items[b.1].floor)));
+    pairs.sort_by(|a, b| items[a.0].floor.cmp(&items[b.0].floor)
+            .then(items[a.1].floor.cmp(&items[b.1].floor)));
 
-    let mut state_combination = state.elevator_floor;
+    let mut state_combination = elevator_floor;
     let mut multiplier = 10;
 
     for (generator_index, corresponding_microchip_index) in pairs.iter() {
-        state_combination += multiplier * state.items[*generator_index].floor;
+        state_combination += multiplier * items[*generator_index].floor;
         multiplier *= 10;
-        state_combination += multiplier * state.items[*corresponding_microchip_index].floor;
+        state_combination += multiplier * items[*corresponding_microchip_index].floor;
         multiplier *= 10;
     }
 
