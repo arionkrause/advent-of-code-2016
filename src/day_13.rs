@@ -93,7 +93,7 @@ fn add_new_positions(mut grid: &mut Vec<Vec<char>>,
 
     for new_position in new_positions {
         if visited_positions.contains(&new_position)
-                || queue.iter().find(|state| state.position == new_position).is_some() {
+                || queue.iter().any(|state| state.position == new_position) {
             continue;
         }
 
