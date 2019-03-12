@@ -1,10 +1,11 @@
 pub fn solve(input: &str) {
     println!("Day {}.", file!().chars().filter(|c| c.is_digit(10)).collect::<String>());
     println!("Part 1: {}.", part_1::solve(&input, 272));
+    println!("Part 2: {}.", part_2::solve(&input, 35651584));
     println!();
 }
 
-fn get_dragon_curve(data: &str, length: usize) -> String {
+fn get_dragon_curve(data: &str, length: usize) -> Vec<char> {
     let mut data_a: Vec<char> = data.chars().collect();
 
     while data_a.len() < length {
@@ -18,11 +19,12 @@ fn get_dragon_curve(data: &str, length: usize) -> String {
         data_a.extend(data_b);
     }
 
-    data_a.into_iter().take(length).collect()
+    data_a.truncate(length);
+    data_a
 }
 
-fn get_checksum(data: &str) -> String {
-    let mut checksum: Vec<char> = data.chars().collect();
+fn get_checksum(data: &Vec<char>) -> String {
+    let mut checksum: Vec<char> = data.clone();
     let mut buffer = Vec::new();
 
     loop {
@@ -43,8 +45,7 @@ mod part_1 {
     use crate::day_16::{get_checksum, get_dragon_curve};
 
     pub fn solve(input: &str, disk_length: usize) -> String {
-        let data = get_dragon_curve(&input, disk_length);
-        get_checksum(&data)
+        get_checksum(&get_dragon_curve(&input, disk_length))
     }
 
     #[cfg(test)]
@@ -56,5 +57,13 @@ mod part_1 {
     #[test]
     fn test_2() {
         assert_eq!(solve("10000", 20), "01100");
+    }
+}
+
+mod part_2 {
+    use crate::day_16::{get_checksum, get_dragon_curve};
+
+    pub fn solve(input: &str, disk_length: usize) -> String {
+        get_checksum(&get_dragon_curve(&input, disk_length))
     }
 }
