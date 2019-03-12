@@ -59,8 +59,7 @@ fn get_minimum_amount_steps(state: State) -> usize {
         let state = queue.pop_front().unwrap();
 
         if state.elevator_floor == 4
-                // Using negated "any"+"different" instead of "all"+"equal" shortcircuits comparison
-                && !state.items.iter().any(|item| item.floor != 4) {
+                && state.items.iter().all(|item| item.floor == 4) {
             return state.steps_taken;
         }
 
@@ -68,7 +67,7 @@ fn get_minimum_amount_steps(state: State) -> usize {
 
         for next_state in get_new_states(&state) {
             if !seem_state_combinations.contains(&next_state.combination)
-                && !queue.iter().any(|state| state.combination == next_state.combination) {
+                && queue.iter().all(|state| state.combination != next_state.combination) {
                 queue.push_back(next_state);
             }
         }
