@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::collections::HashSet;
 
 pub fn solve(input: &str) {
     println!("Day {}.", file!().chars().filter(|c| c.is_digit(10)).collect::<String>());
@@ -30,13 +31,23 @@ fn decode_input(input: &str) -> Vec<Disc> {
 
 fn get_first_valid_time(discs: &Vec<Disc>) -> usize {
     let mut time = 1;
+    let mut increment = 1;
+    let mut processed_discs_indices = HashSet::new();
 
     loop {
-        if !discs.iter().any(|disc| (disc.starting_position + disc.id + time) % disc.amount_positions != 0) {
+        for (index, disc) in discs.iter().enumerate() {
+            if !processed_discs_indices.contains(&index)
+                    && (time + disc.starting_position + disc.id) % disc.amount_positions == 0 {
+                increment *= disc.amount_positions;
+                processed_discs_indices.insert(index);
+            }
+        }
+
+        if processed_discs_indices.len() == discs.len() {
             return time;
         }
 
-        time += 1;
+        time += increment;
     }
 }
 
