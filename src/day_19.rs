@@ -7,9 +7,13 @@ pub fn solve(input: &str) {
 
 mod part_1 {
     pub fn solve(input: &str) -> usize {
+        // This is a case of the "Josephus problem"
+        // Numberphile video about it: https://www.youtube.com/watch?v=uCsD3ZGzMgE
         let input_as_number = input.parse::<usize>().unwrap();
-        let highest_power_of_two_lower_than_input = 2usize.pow((input_as_number as f32).log2() as u32) as usize;
-        1 + 2 * (input_as_number - highest_power_of_two_lower_than_input)
+        let mut number_as_binary = format!("{:b}", input_as_number);
+        let first_digit_of_number_as_binary = number_as_binary.remove(0);
+        number_as_binary.push(first_digit_of_number_as_binary);
+        usize::from_str_radix(&number_as_binary, 2).unwrap()
     }
 
     #[cfg(test)]
@@ -25,7 +29,7 @@ mod part_2 {
         let highest_power_of_three_lower_than_input = 3usize.pow(((input_as_number - 1) as f32).log(3f32) as u32) as usize;
 
         input_as_number - highest_power_of_three_lower_than_input
-            + ((input_as_number as isize - 2 * highest_power_of_three_lower_than_input as isize).max(0)) as usize
+                + ((input_as_number as isize - 2 * highest_power_of_three_lower_than_input as isize).max(0)) as usize
     }
 
     #[cfg(test)]
