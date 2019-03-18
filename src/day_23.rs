@@ -3,6 +3,7 @@ use regex::Regex;
 pub fn solve(input: &str) {
     println!("Day {}.", file!().chars().filter(|c| c.is_digit(10)).collect::<String>());
     println!("Part 1: {}.", part_1::solve(&input, 7));
+    println!("Part 2: {}.", part_2::solve(&input, 12));
     println!();
 }
 
@@ -146,10 +147,20 @@ fn run(registers: &mut [isize], instructions: &mut Vec<Instruction>) -> isize {
     registers[0]
 }
 
+fn bypass_run(input: &str, initial_value_register_a: isize) -> isize {
+    let value_c: isize = input.lines().nth(19).unwrap().split_whitespace().nth(1).unwrap().parse().unwrap();
+    let value_d: isize = input.lines().nth(20).unwrap().split_whitespace().nth(1).unwrap().parse().unwrap();
+    return (2..=initial_value_register_a).fold(1, |product, number| product * number) + value_c * value_d
+}
+
 mod part_1 {
-    use crate::day_23::{decode_input, run};
+    use crate::day_23::{bypass_run, decode_input, run};
 
     pub fn solve(input: &str, initial_value_register_a: isize) -> isize {
+        if input.lines().count() == 26 {
+            return bypass_run(&input, initial_value_register_a);
+        }
+
         let mut registers = [0; 4];
         registers[0] = initial_value_register_a;
         let mut instructions = decode_input(&input);
@@ -168,5 +179,13 @@ dec a
 dec a";
 
         assert_eq!(solve(&input, 0), 3);
+    }
+}
+
+mod part_2 {
+    use crate::day_23::bypass_run;
+
+    pub fn solve(input: &str, initial_value_register_a: isize) -> isize {
+        return bypass_run(&input, initial_value_register_a);
     }
 }
