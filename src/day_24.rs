@@ -34,13 +34,13 @@ fn get_shortest_path_size(distances: &Vec<Vec<usize>>, mut path: Vec<usize>, ind
     path.push(index);
 
     if path.len() == distances.len() {
-        let mut total = (1..path.len()).fold(0, |total, i| total + distances[path[i - 1]][path[i]]);
+        let mut path_size = (1..path.len()).fold(0, |total, i| total + distances[path[i - 1]][path[i]]);
 
         if return_to_origin {
-            total += distances[path[path.len() - 1]][0];
+            path_size += distances[path[path.len() - 1]][0];
         }
 
-        return Some(total);
+        return Some(path_size);
     }
 
     for index_other in 0..distances.len() {
@@ -64,7 +64,11 @@ fn get_distances_between_points_of_interest(grid: &Vec<Vec<char>>) -> Vec<Vec<us
 
     for point_of_interest_a in 0..points_of_interest_positions.len() {
         for point_of_interest_b in 0..points_of_interest_positions.len() {
-            distances[point_of_interest_a][point_of_interest_b] = get_distance(&grid, &points_of_interest_positions[point_of_interest_a], &points_of_interest_positions[point_of_interest_b]);
+            distances[point_of_interest_a][point_of_interest_b] = if distances[point_of_interest_b][point_of_interest_a] != std::usize::MAX {
+                distances[point_of_interest_b][point_of_interest_a]
+            } else {
+                get_distance(&grid, &points_of_interest_positions[point_of_interest_a], &points_of_interest_positions[point_of_interest_b])
+            };
         }
     }
 
